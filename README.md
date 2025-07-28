@@ -6,6 +6,9 @@ A modern web application that allows you to open Excel files (.xlsx, .xls) and C
 
 - **Drag & Drop Upload**: Simply drag your Excel file into the upload area
 - **Multiple Sheet Support**: Switch between different worksheets in your Excel file
+- **Inline Data Editing**: Click "Edit Mode" to modify data directly in the table
+- **Change Tracking**: Visual indicators show which cells have been modified
+- **Save & Cancel**: Save your changes or cancel to restore original data
 - **Search Functionality**: Search through your data with real-time highlighting
 - **Export to CSV**: Export filtered data to CSV format
 - **Responsive Design**: Works on desktop, tablet, and mobile devices
@@ -18,8 +21,16 @@ A modern web application that allows you to open Excel files (.xlsx, .xls) and C
    - Dragging and dropping it onto the upload area, OR
    - Clicking the upload area and selecting a file
 3. If your Excel file has multiple sheets, select the desired sheet from the dropdown
-4. Use the search box to filter data in real-time
-5. Export filtered data using the "Export CSV" button
+4. **View Mode** (default):
+   - Use the search box to filter data in real-time
+   - Export filtered data using the "Export CSV" button
+5. **Edit Mode**:
+   - Click "✏️ Edit Mode" to enable data editing
+   - Click any cell to edit its content
+   - Press Enter to confirm changes or Escape to cancel
+   - Changed cells are highlighted with a yellow background
+   - Click "💾 Save Changes" to permanently save modifications
+   - Click "❌ Cancel" to discard all changes and restore original data
 
 ## Supported File Types
 

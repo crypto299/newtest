@@ -2,6 +2,9 @@
 let currentWorkbook = null;
 let currentData = null;
 let filteredData = null;
+let originalData = null;
+let isEditMode = false;
+let changedCells = new Set();
 
 // DOM elements
 const uploadArea = document.getElementById('uploadArea');
@@ -13,6 +16,9 @@ const sheetSelector = document.getElementById('sheetSelector');
 const tableSection = document.getElementById('tableSection');
 const tableContainer = document.getElementById('tableContainer');
 const searchInput = document.getElementById('searchInput');
+const editBtn = document.getElementById('editBtn');
+const saveBtn = document.getElementById('saveBtn');
+const cancelBtn = document.getElementById('cancelBtn');
 const exportBtn = document.getElementById('exportBtn');
 const errorMessage = document.getElementById('errorMessage');
 const rowCount = document.getElementById('rowCount');
@@ -36,6 +42,11 @@ function setupEventListeners() {
     
     // Search functionality
     searchInput.addEventListener('input', handleSearch);
+    
+    // Edit functionality
+    editBtn.addEventListener('click', toggleEditMode);
+    saveBtn.addEventListener('click', saveChanges);
+    cancelBtn.addEventListener('click', cancelEdit);
     
     // Export functionality
     exportBtn.addEventListener('click', handleExport);
@@ -144,6 +155,12 @@ function loadSheet(sheetName) {
         
         // Reset filtered data
         filteredData = [...currentData];
+        originalData = JSON.parse(JSON.stringify(currentData));
+        
+        // Reset edit mode
+        isEditMode = false;
+        changedCells.clear();
+        updateEditButtons();
         
         // Clear search
         searchInput.value = '';
@@ -197,8 +214,23 @@ function renderTable() {
             const cellValue = row[i] || '';
             td.textContent = cellValue;
             
-            // Add data attribute for searching
+            // Add data attributes
             td.setAttribute('data-original', cellValue);
+            td.setAttribute('data-row', rowIndex + 1); // +1 because we skip header
+            td.setAttribute('data-col', i);
+            
+            // Add edit functionality if in edit mode
+            if (isEditMode) {
+                td.classList.add('editable');
+                td.innerHTML = cellValue + '<span class="edit-indicator">✏️</span>';
+                td.addEventListener('click', handleCellClick);
+            }
+            
+            // Check if this cell was changed
+            const cellId = `${rowIndex + 1}-${i}`;
+            if (changedCells.has(cellId)) {
+                td.classList.add('changed-cell');
+            }
             
             tr.appendChild(td);
         }
@@ -318,6 +350,159 @@ function showError(message) {
 
 function hideError() {
     errorMessage.style.display = 'none';
+}
+
+// Edit functionality
+function toggleEditMode() {
+    isEditMode = !isEditMode;
+    updateEditButtons();
+    renderTable();
+}
+
+function updateEditButtons() {
+    if (isEditMode) {
+        editBtn.style.display = 'none';
+        saveBtn.style.display = 'inline-block';
+        cancelBtn.style.display = 'inline-block';
+        searchInput.disabled = true;
+        searchInput.placeholder = 'Search disabled in edit mode';
+    } else {
+        editBtn.style.display = 'inline-block';
+        saveBtn.style.display = 'none';
+        cancelBtn.style.display = 'none';
+        searchInput.disabled = false;
+        searchInput.placeholder = 'Search in table...';
+    }
+}
+
+function handleCellClick(e) {
+    if (!isEditMode) return;
+    
+    const cell = e.target.closest('td');
+    if (cell.classList.contains('editing')) return;
+    
+    const currentValue = cell.getAttribute('data-original') || '';
+    
+    // Create input field
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'cell-input';
+    input.value = currentValue;
+    
+    // Replace cell content with input
+    cell.innerHTML = '';
+    cell.appendChild(input);
+    cell.classList.add('editing');
+    
+    // Focus and select text
+    input.focus();
+    input.select();
+    
+    // Handle input events
+    input.addEventListener('blur', () => finishEdit(cell, input));
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            finishEdit(cell, input);
+        } else if (e.key === 'Escape') {
+            cancelCellEdit(cell, currentValue);
+        }
+    });
+}
+
+function finishEdit(cell, input) {
+    const newValue = input.value;
+    const oldValue = cell.getAttribute('data-original');
+    const row = parseInt(cell.getAttribute('data-row'));
+    const col = parseInt(cell.getAttribute('data-col'));
+    
+    // Update the data
+    filteredData[row][col] = newValue;
+    currentData[row][col] = newValue;
+    
+    // Update cell display
+    cell.innerHTML = newValue + '<span class="edit-indicator">✏️</span>';
+    cell.classList.remove('editing');
+    cell.setAttribute('data-original', newValue);
+    
+    // Track changes
+    const cellId = `${row}-${col}`;
+    if (newValue !== originalData[row][col]) {
+        changedCells.add(cellId);
+        cell.classList.add('changed-cell');
+    } else {
+        changedCells.delete(cellId);
+        cell.classList.remove('changed-cell');
+    }
+    
+    // Re-add click handler
+    cell.addEventListener('click', handleCellClick);
+}
+
+function cancelCellEdit(cell, originalValue) {
+    cell.innerHTML = originalValue + '<span class="edit-indicator">✏️</span>';
+    cell.classList.remove('editing');
+    cell.addEventListener('click', handleCellClick);
+}
+
+function saveChanges() {
+    if (changedCells.size === 0) {
+        showError('No changes to save');
+        return;
+    }
+    
+    const changeCount = changedCells.size;
+    
+    // Update original data to current state
+    originalData = JSON.parse(JSON.stringify(currentData));
+    changedCells.clear();
+    
+    // Exit edit mode
+    isEditMode = false;
+    updateEditButtons();
+    renderTable();
+    
+    // Show success message
+    showSuccess(`Successfully saved ${changeCount} changes`);
+}
+
+function cancelEdit() {
+    // Restore original data
+    currentData = JSON.parse(JSON.stringify(originalData));
+    filteredData = [...currentData];
+    changedCells.clear();
+    
+    // Exit edit mode
+    isEditMode = false;
+    updateEditButtons();
+    renderTable();
+    
+    showSuccess('Changes cancelled, data restored');
+}
+
+function showSuccess(message) {
+    // Create temporary success message
+    const successDiv = document.createElement('div');
+    successDiv.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+        color: white;
+        padding: 15px 25px;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(78, 205, 196, 0.3);
+        z-index: 1000;
+        font-weight: 500;
+        animation: slideInRight 0.3s ease;
+    `;
+    successDiv.textContent = '✅ ' + message;
+    
+    document.body.appendChild(successDiv);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        successDiv.remove();
+    }, 3000);
 }
 
 // Handle file input reset when clicking upload area again
