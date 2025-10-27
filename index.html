@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel File Viewer</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 Excel File Viewer</h1>
+            <p>Upload an Excel file to view its data in a beautiful table</p>
+        </header>
+
+        <div class="upload-section">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-content">
+                    <div class="upload-icon">📁</div>
+                    <h3>Drag & Drop Excel File Here</h3>
+                    <p>or click to browse</p>
+                    <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" hidden>
+                </div>
+            </div>
+        </div>
+
+        <div class="file-info" id="fileInfo" style="display: none;">
+            <div class="info-item">
+                <span class="label">File Name:</span>
+                <span class="value" id="fileName"></span>
+            </div>
+            <div class="info-item">
+                <span class="label">File Size:</span>
+                <span class="value" id="fileSize"></span>
+            </div>
+            <div class="info-item">
+                <span class="label">Worksheets:</span>
+                <select id="sheetSelector" class="sheet-selector"></select>
+            </div>
+        </div>
+
+        <div class="table-section" id="tableSection" style="display: none;">
+            <div class="table-controls">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Search in table...">
+                    <span class="search-icon">🔍</span>
+                </div>
+                <button id="editBtn" class="edit-btn">✏️ Edit Mode</button>
+                <button id="saveBtn" class="save-btn" style="display: none;">💾 Save Changes</button>
+                <button id="cancelBtn" class="cancel-btn" style="display: none;">❌ Cancel</button>
+                <button id="exportBtn" class="export-btn">Export CSV</button>
+            </div>
+            <div class="table-container" id="tableContainer">
+                <!-- Table will be inserted here -->
+            </div>
+            <div class="table-info">
+                <span id="rowCount">0 rows</span> | 
+                <span id="colCount">0 columns</span>
+            </div>
+        </div>
+
+        <div class="error-message" id="errorMessage" style="display: none;">
+            <div class="error-content">
+                <span class="error-icon">⚠️</span>
+                <span class="error-text"></span>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
